@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Manager</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 400px; margin: 40px auto; padding: 0 16px; }
+        h1 { font-size: 1.4rem; }
+        label { display: block; margin-top: 12px; font-weight: bold; }
+        input, select, button { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; }
+        button { margin-top: 16px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Budget Manager</h1>
+    <form id="transaction-form">
+        <label for="amount">Amount ($)</label>
+        <input type="number" id="amount" name="amount" step="0.01" min="0" required>
+
+        <label for="date">Date</label>
+        <input type="date" id="date" name="date" required>
+
+        <label for="category">Category</label>
+        <select id="category" name="category" required>
+            <option value="" disabled selected>Select a category</option>
+            <option value="food">Food</option>
+            <option value="housing">Housing</option>
+            <option value="transport">Transport</option>
+            <option value="entertainment">Entertainment</option>
+            <option value="utilities">Utilities</option>
+            <option value="other">Other</option>
+        </select>
+
+        <button type="submit">Add Transaction</button>
+    </form>
+
+    <button id="refresh" style="margin-top: 24px;">Refresh</button>
+
+    <h2 style="font-size: 1.1rem; margin-top: 24px;">Monthly Spending by Category</h2>
+    <canvas id="chart"></canvas>
+
+    <script>
+        document.getElementById("transaction-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const amount = parseFloat(document.getElementById("amount").value);
+            const date = document.getElementById("date").value;
+            const category = document.getElementById("category").value;
+
+            const response = await fetch("http://localhost:5158/transaction", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ amount, date, category })
+            });
+
+            if (response.ok) {
+                e.target.reset();
+            } else {
+                console.error("Failed:", response.status);
+            }
+        });
+        document.getElementById("refresh").addEventListener("click", async () => {
+            const response = await fetch("http://localhost:5158/transactions");
+            const data = await response.json();
+
+            // Group by month and category
+            const monthCategory = {};
+            const categories = new Set();
+            data.forEach(t => {
+                const month = t.date.slice(0, 7);
+                if (!monthCategory[month]) monthCategory[month] = {};
+                monthCategory[month][t.category] = (monthCategory[month][t.category] || 0) + t.amount;
+                categories.add(t.category);
+            });
+
+            const sortedMonths = Object.keys(monthCategory).sort();
+
+            // One dataset per category
+            const datasets = [...categories].map(cat => ({
+                label: cat,
+                data: sortedMonths.map(m => monthCategory[m][cat] || 0)
+            }));
+
+            if (window.myChart) window.myChart.destroy();
+
+            window.myChart = new Chart(document.getElementById("chart"), {
+                type: "bar",
+                data: {
+                    labels: sortedMonths,
+                    datasets: datasets
+                },
+                options: {
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, beginAtZero: true }
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
