@@ -28,3 +28,6 @@ button {
 #status.error {
     display: block; background: #f8d7da; color: #721c24;
 }
+#status.info {
+    display: block; background: #e2e3e5; color: #383d41;
+}

@@ -7,7 +7,7 @@ function showStatus(message, type) {
 
 document.getElementById("date").valueAsDate = new Date();
 
-document.getElementById("ai-submit").addEventListener("click", async () => {
+async function submitAiInput() {
     const aiInput = document.getElementById("ai-input");
     const text = aiInput.value.trim();
     if (!text) return;
@@ -29,7 +29,7 @@ document.getElementById("ai-submit").addEventListener("click", async () => {
         }
 
         if (result.needsClarification) {
-            showStatus(result.needsClarification, "error");
+            showStatus(result.needsClarification, "info");
             return;
         }
 
@@ -39,6 +39,11 @@ document.getElementById("ai-submit").addEventListener("click", async () => {
     } catch {
         showStatus("Something went wrong.", "error");
     }
+}
+
+document.getElementById("ai-submit").addEventListener("click", submitAiInput);
+document.getElementById("ai-input").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") submitAiInput();
 });
 
 const amountInput = document.getElementById("amount");
