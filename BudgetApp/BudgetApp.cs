@@ -36,6 +36,23 @@ app.MapPost("/transaction", async (Transaction transaction, BudgetDb db) =>
 })
 .WithName("CreateTransaction");
 
+app.MapPost("/transaction/parse", async (NaturalLanguageInput input, BudgetDb db) =>
+{
+    var entry = await ClaudeBudgetParser.ParseBudgetEntryAsync(input.Text);
+
+    if (entry.NeedsClarification != null)
+    {
+        return Results.BadRequest(entry.NeedsClarification);
+    }
+
+    var transaction = new Transaction(entry.Amount, entry.Date, entry.Category!);
+
+    db.Transactions.Add(transaction);
+    await db.SaveChangesAsync();
+    return Results.Ok(transaction);
+})
+.WithName("ParseTransaction");
+
 app.MapGet("/transactions", async (BudgetDb db) =>
 {
     var transactions = await db.Transactions.ToListAsync();
@@ -49,3 +66,5 @@ record Transaction(decimal Amount, DateOnly Date, string Category)
 {
     public int Id {get; set;}
 };
+
+record NaturalLanguageInput(string Text);
