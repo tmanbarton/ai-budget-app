@@ -9,6 +9,15 @@
 </head>
 <body>
     <h1>Budget Manager</h1>
+
+    <div id="ai-input-section">
+        <label for="ai-input">Describe your transaction</label>
+        <input type="text" id="ai-input" placeholder="spent $40 on groceries yesterday">
+        <button type="button" id="ai-submit">Add with AI</button>
+    </div>
+
+    <div class="separator">— or enter manually —</div>
+
     <form id="transaction-form">
         <label for="amount">Amount ($)</label>
         <input type="number" id="amount" name="amount" step="0.01" min="0.01" required>

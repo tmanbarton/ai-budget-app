@@ -7,6 +7,40 @@ function showStatus(message, type) {
 
 document.getElementById("date").valueAsDate = new Date();
 
+document.getElementById("ai-submit").addEventListener("click", async () => {
+    const aiInput = document.getElementById("ai-input");
+    const text = aiInput.value.trim();
+    if (!text) return;
+
+    showStatus("Parsing...", "success");
+
+    try {
+        const response = await fetch("/transaction/parse", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            showStatus("Failed to parse transaction.", "error");
+            return;
+        }
+
+        if (result.needsClarification) {
+            showStatus(result.needsClarification, "error");
+            return;
+        }
+
+        aiInput.value = "";
+        showStatus("Transaction added.", "success");
+        await refreshChart();
+    } catch {
+        showStatus("Something went wrong.", "error");
+    }
+});
+
 const amountInput = document.getElementById("amount");
 amountInput.addEventListener("input", () => {
     if (amountInput.validity.rangeUnderflow) {

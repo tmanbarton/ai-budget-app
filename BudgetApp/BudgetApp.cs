@@ -27,12 +27,9 @@ app.UseStaticFiles();
 
 app.MapPost("/transaction", async (Transaction transaction, BudgetDb db) =>
 {
-    if (transaction.Amount <= 0)
-        return Results.BadRequest("Think positively. The amount must be greater than 0.");
-
     db.Transactions.Add(transaction);
     await db.SaveChangesAsync();
-    return Results.Ok(transaction);
+    return Results.Ok(new TransactionResponse(transaction.Id, transaction.Amount, transaction.Date, transaction.Category, null));
 })
 .WithName("CreateTransaction");
 
@@ -42,14 +39,14 @@ app.MapPost("/transaction/parse", async (NaturalLanguageInput input, BudgetDb db
 
     if (entry.NeedsClarification != null)
     {
-        return Results.BadRequest(entry.NeedsClarification);
+        return Results.Ok(new TransactionResponse(0, 0, default, null, entry.NeedsClarification));
     }
 
     var transaction = new Transaction(entry.Amount, entry.Date, entry.Category!);
 
     db.Transactions.Add(transaction);
     await db.SaveChangesAsync();
-    return Results.Ok(transaction);
+    return Results.Ok(new TransactionResponse(transaction.Id, transaction.Amount, transaction.Date, transaction.Category, null));
 })
 .WithName("ParseTransaction");
 
@@ -66,5 +63,7 @@ record Transaction(decimal Amount, DateOnly Date, string Category)
 {
     public int Id {get; set;}
 };
+
+record TransactionResponse(int Id, decimal Amount, DateOnly Date, string? Category, string? NeedsClarification);
 
 record NaturalLanguageInput(string Text);

@@ -24,7 +24,7 @@ public class ClaudeBudgetParser
         // 1. Build the request body as an anonymous object
         var requestBody = new
         {
-            model = "claude-sonet-4-5",
+            model = "claude-sonnet-4-5",
             max_tokens = 1024,
             system = "You are an assistant that extracts structured budget entry information from user input. The user will provide a description of a financial transaction and TODO.",
             messages = new[]
@@ -35,7 +35,7 @@ public class ClaudeBudgetParser
             {
                 format = new
                 {
-                    type = "json_opject",
+                    type = "json_object",
                     schema = new
                     {
                         type = "object",

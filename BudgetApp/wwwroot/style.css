@@ -15,6 +15,10 @@ button {
     margin-top: 16px; cursor: pointer;
 }
 
+.separator {
+    text-align: center; color: #888; margin: 20px 0; font-size: 0.9rem;
+}
+
 #status {
     margin-top: 12px; padding: 8px; display: none; border-radius: 4px;
 }
