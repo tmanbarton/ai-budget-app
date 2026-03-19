@@ -7,7 +7,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddOpenApi();
 builder.Services.AddCors();
 builder.Services.AddDbContext<BudgetDb>(options =>
-options.UseSqlite("Data Source=budget.db"));
+options.UseSqlite(builder.Configuration.GetConnectionString("BudgetDb")));
 
 var app = builder.Build();
 
@@ -17,20 +17,28 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
-app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-app.UseHttpsRedirection();
-
-app.MapPost("/transaction", (Transaction transaction, BudgetDb db) =>
+if (app.Environment.IsDevelopment())
 {
+    app.UseCors(policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+}
+app.UseHttpsRedirection();
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
+app.MapPost("/transaction", async (Transaction transaction, BudgetDb db) =>
+{
+    if (transaction.Amount <= 0)
+        return Results.BadRequest("Think positively. The amount must be greater than 0.");
+
     db.Transactions.Add(transaction);
-    db.SaveChanges();
+    await db.SaveChangesAsync();
     return Results.Ok(transaction);
 })
 .WithName("CreateTransaction");
 
-app.MapGet("/transactions", (BudgetDb db) =>
+app.MapGet("/transactions", async (BudgetDb db) =>
 {
-    var transactions = db.Transactions.ToList();
+    var transactions = await db.Transactions.ToListAsync();
     return Results.Ok(transactions);
 })
 .WithName("GetTransactions");

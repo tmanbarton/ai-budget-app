@@ -11,13 +11,16 @@
         label { display: block; margin-top: 12px; font-weight: bold; }
         input, select, button { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; }
         button { margin-top: 16px; cursor: pointer; }
+        #status { margin-top: 12px; padding: 8px; display: none; border-radius: 4px; }
+        #status.success { display: block; background: #d4edda; color: #155724; }
+        #status.error { display: block; background: #f8d7da; color: #721c24; }
     </style>
 </head>
 <body>
     <h1>Budget Manager</h1>
     <form id="transaction-form">
         <label for="amount">Amount ($)</label>
-        <input type="number" id="amount" name="amount" step="0.01" min="0" required>
+        <input type="number" id="amount" name="amount" step="0.01" min="0.01" required>
 
         <label for="date">Date</label>
         <input type="date" id="date" name="date" required>
@@ -35,34 +38,32 @@
 
         <button type="submit">Add Transaction</button>
     </form>
-
-    <button id="refresh" style="margin-top: 24px;">Refresh</button>
+    <p id="status"></p>
 
     <h2 style="font-size: 1.1rem; margin-top: 24px;">Monthly Spending by Category</h2>
     <canvas id="chart"></canvas>
 
     <script>
-        document.getElementById("transaction-form").addEventListener("submit", async (e) => {
-            e.preventDefault();
+        const statusElement = document.getElementById("status");
 
-            const amount = parseFloat(document.getElementById("amount").value);
-            const date = document.getElementById("date").value;
-            const category = document.getElementById("category").value;
+        function showStatus(message, type) {
+            statusElement.textContent = message;
+            statusElement.className = type;
+        }
 
-            const response = await fetch("http://localhost:5158/transaction", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount, date, category })
-            });
+        document.getElementById("date").valueAsDate = new Date();
 
-            if (response.ok) {
-                e.target.reset();
+        const amountInput = document.getElementById("amount");
+        amountInput.addEventListener("input", () => {
+            if (amountInput.validity.rangeUnderflow) {
+                amountInput.setCustomValidity("Think positively. The amount must be greater than zero.");
             } else {
-                console.error("Failed:", response.status);
+                amountInput.setCustomValidity("");
             }
         });
-        document.getElementById("refresh").addEventListener("click", async () => {
-            const response = await fetch("http://localhost:5158/transactions");
+
+        async function refreshChart() {
+            const response = await fetch(`/transactions`);
             const data = await response.json();
 
             // Group by month and category
@@ -98,7 +99,40 @@
                     }
                 }
             });
+        }
+
+        document.getElementById("transaction-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+
+            const amount = parseFloat(document.getElementById("amount").value);
+            const date = document.getElementById("date").value;
+            const category = document.getElementById("category").value;
+
+            const selectedDate = new Date(date + "T00:00:00");
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const daysDiff = Math.round((selectedDate - today) / (1000 * 60 * 60 * 24));
+            if (daysDiff > 30 && !confirm(`The date is ${daysDiff} days in the future. Are you sure that's correct?`)) {
+                return;
+            }
+
+            const response = await fetch(`/transaction`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ amount, date, category })
+            });
+
+            if (response.ok) {
+                e.target.reset();
+                showStatus("Transaction added.", "success");
+                await refreshChart();
+            } else {
+                const error = await response.text();
+                showStatus(error || "Failed to add transaction.", "error");
+            }
         });
+
+        refreshChart();
     </script>
 </body>
 </html>
