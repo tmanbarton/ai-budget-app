@@ -4,17 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Budget Manager</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { font-family: sans-serif; max-width: 400px; margin: 40px auto; padding: 0 16px; }
-        h1 { font-size: 1.4rem; }
-        label { display: block; margin-top: 12px; font-weight: bold; }
-        input, select, button { width: 100%; padding: 8px; margin-top: 4px; box-sizing: border-box; }
-        button { margin-top: 16px; cursor: pointer; }
-        #status { margin-top: 12px; padding: 8px; display: none; border-radius: 4px; }
-        #status.success { display: block; background: #d4edda; color: #155724; }
-        #status.error { display: block; background: #f8d7da; color: #721c24; }
-    </style>
 </head>
 <body>
     <h1>Budget Manager</h1>
@@ -43,96 +34,6 @@
     <h2 style="font-size: 1.1rem; margin-top: 24px;">Monthly Spending by Category</h2>
     <canvas id="chart"></canvas>
 
-    <script>
-        const statusElement = document.getElementById("status");
-
-        function showStatus(message, type) {
-            statusElement.textContent = message;
-            statusElement.className = type;
-        }
-
-        document.getElementById("date").valueAsDate = new Date();
-
-        const amountInput = document.getElementById("amount");
-        amountInput.addEventListener("input", () => {
-            if (amountInput.validity.rangeUnderflow) {
-                amountInput.setCustomValidity("Think positively. The amount must be greater than zero.");
-            } else {
-                amountInput.setCustomValidity("");
-            }
-        });
-
-        async function refreshChart() {
-            const response = await fetch(`/transactions`);
-            const data = await response.json();
-
-            // Group by month and category
-            const monthCategory = {};
-            const categories = new Set();
-            data.forEach(t => {
-                const month = t.date.slice(0, 7);
-                if (!monthCategory[month]) monthCategory[month] = {};
-                monthCategory[month][t.category] = (monthCategory[month][t.category] || 0) + t.amount;
-                categories.add(t.category);
-            });
-
-            const sortedMonths = Object.keys(monthCategory).sort();
-
-            // One dataset per category
-            const datasets = [...categories].map(cat => ({
-                label: cat,
-                data: sortedMonths.map(m => monthCategory[m][cat] || 0)
-            }));
-
-            if (window.myChart) window.myChart.destroy();
-
-            window.myChart = new Chart(document.getElementById("chart"), {
-                type: "bar",
-                data: {
-                    labels: sortedMonths,
-                    datasets: datasets
-                },
-                options: {
-                    scales: {
-                        x: { stacked: true },
-                        y: { stacked: true, beginAtZero: true }
-                    }
-                }
-            });
-        }
-
-        document.getElementById("transaction-form").addEventListener("submit", async (e) => {
-            e.preventDefault();
-
-            const amount = parseFloat(document.getElementById("amount").value);
-            const date = document.getElementById("date").value;
-            const category = document.getElementById("category").value;
-
-            const selectedDate = new Date(date + "T00:00:00");
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const daysDiff = Math.round((selectedDate - today) / (1000 * 60 * 60 * 24));
-            if (daysDiff > 30 && !confirm(`The date is ${daysDiff} days in the future. Are you sure that's correct?`)) {
-                return;
-            }
-
-            const response = await fetch(`/transaction`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ amount, date, category })
-            });
-
-            if (response.ok) {
-                e.target.reset();
-                showStatus("Transaction added.", "success");
-                await refreshChart();
-            } else {
-                const error = await response.text();
-                showStatus(error || "Failed to add transaction.", "error");
-            }
-        });
-
-        refreshChart();
-    </script>
+    <script src="app.js"></script>
 </body>
 </html>
