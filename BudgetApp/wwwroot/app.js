@@ -34,7 +34,7 @@ document.getElementById("ai-submit").addEventListener("click", async () => {
         }
 
         aiInput.value = "";
-        showStatus("Transaction added.", "success");
+        showStatus(`Transaction for $${result.amount} in ${result.category} on ${result.date} added successfully.`, "success");
         await refreshChart();
     } catch {
         showStatus("Something went wrong.", "error");

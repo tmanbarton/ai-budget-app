@@ -11,6 +11,8 @@ options.UseSqlite(builder.Configuration.GetConnectionString("BudgetDb")));
 
 var app = builder.Build();
 
+ClaudeBudgetParser.Initialize(Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY")!);
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -59,11 +61,11 @@ app.MapGet("/transactions", async (BudgetDb db) =>
 
 app.Run();
 
-record Transaction(decimal Amount, DateOnly Date, string Category)
+record Transaction(decimal Amount, string Date, string Category)
 {
     public int Id {get; set;}
 };
 
-record TransactionResponse(int Id, decimal Amount, DateOnly Date, string? Category, string? NeedsClarification);
+record TransactionResponse(int Id, decimal Amount, string Date, string? Category, string? NeedsClarification);
 
 record NaturalLanguageInput(string Text);
